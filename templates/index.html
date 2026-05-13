@@ -5,651 +5,286 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WAF Simulator — Attack Launcher</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --bg:        #0a0c0f;
-      --surface:   #10141a;
-      --surface2:  #161b24;
-      --border:    #1e2530;
-      --accent:    #e63946;
-      --accent2:   #f4a261;
-      --green:     #3fb950;
-      --text:      #c9d1d9;
-      --muted:     #4a5568;
-      --mono:      'Share Tech Mono', monospace;
-      --sans:      'Rajdhani', sans-serif;
+      --bg:#f4f4f0;--surface:#ffffff;--surface2:#f9f9f6;--border:#e0dfd8;--border2:#d0cfc8;
+      --accent:#c0392b;--accent-h:#a93226;--accent2:#d35400;--green:#1e8449;--blue:#1a5276;
+      --text:#1a1a1a;--muted:#666660;--light:#999992;
+      --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;
+      --radius:6px;--shadow:0 1px 3px rgba(0,0,0,.08),0 4px 12px rgba(0,0,0,.05);
     }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--sans);
-      min-height: 100vh;
-    }
-
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image:
-        linear-gradient(rgba(230,57,70,0.025) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(230,57,70,0.025) 1px, transparent 1px);
-      background-size: 40px 40px;
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    /* ── Layout ── */
-    .app { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 1.5rem 2rem; }
-
-    /* ── Header ── */
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding-bottom: 1.25rem;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 2rem;
-    }
-
-    .brand { display: flex; align-items: center; gap: 1rem; }
-
-    .brand-dot {
-      width: 10px; height: 10px;
-      border-radius: 50%;
-      background: var(--accent);
-      animation: pulse 1.5s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(230,57,70,0.4); }
-      50%       { opacity: 0.6; box-shadow: 0 0 0 6px rgba(230,57,70,0); }
-    }
-
-    .brand h1 { font-size: 1.3rem; font-weight: 700; letter-spacing: 0.08em; color: #fff; }
-    .brand h1 span { color: var(--accent); }
-    .brand p  { font-family: var(--mono); font-size: 0.6rem; color: var(--muted); letter-spacing: 0.12em; margin-top: 0.1rem; }
-
-    .header-right { display: flex; align-items: center; gap: 1.5rem; }
-
-    .target-pill {
-      font-family: var(--mono);
-      font-size: 0.7rem;
-      background: rgba(244,162,97,0.1);
-      border: 1px solid rgba(244,162,97,0.25);
-      color: var(--accent2);
-      padding: 0.3rem 0.75rem;
-      letter-spacing: 0.05em;
-    }
-
-    .target-pill::before { content: '▸ TARGET: '; }
-
-    .logout-btn {
-      font-family: var(--mono);
-      font-size: 0.65rem;
-      color: var(--muted);
-      text-decoration: none;
-      letter-spacing: 0.1em;
-      transition: color 0.2s;
-    }
-    .logout-btn:hover { color: var(--accent); }
-
-    /* ── Main grid ── */
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
-    }
-
-    @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
-
-    /* ── Cards ── */
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-    }
-
-    .card-header {
-      padding: 0.75rem 1rem;
-      border-bottom: 1px solid var(--border);
-      font-family: var(--mono);
-      font-size: 0.65rem;
-      letter-spacing: 0.15em;
-      color: var(--muted);
-      text-transform: uppercase;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .card-header-accent { color: var(--accent); font-size: 0.9rem; }
-
-    .card-body { padding: 1.25rem; }
-
-    /* ── Scenario selector ── */
-    .scenario-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.75rem;
-    }
-
-    .scenario-card {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      padding: 0.9rem;
-      cursor: pointer;
-      transition: border-color 0.2s, background 0.2s;
-      position: relative;
-    }
-
-    .scenario-card:hover       { border-color: var(--muted); background: var(--surface2); }
-    .scenario-card.selected    { border-color: var(--accent); background: rgba(230,57,70,0.06); }
-    .scenario-card.full-width  { grid-column: 1 / -1; }
-
-    .scenario-card input[type="radio"] { display: none; }
-
-    .scenario-icon { font-size: 1.5rem; margin-bottom: 0.4rem; display: block; }
-
-    .scenario-name {
-      font-family: var(--sans);
-      font-weight: 700;
-      font-size: 0.95rem;
-      color: #fff;
-      letter-spacing: 0.04em;
-    }
-
-    .scenario-desc {
-      font-family: var(--mono);
-      font-size: 0.6rem;
-      color: var(--muted);
-      margin-top: 0.25rem;
-      line-height: 1.5;
-    }
-
-    .scenario-badge {
-      position: absolute;
-      top: 0.6rem; right: 0.6rem;
-      font-family: var(--mono);
-      font-size: 0.55rem;
-      padding: 0.15rem 0.4rem;
-      letter-spacing: 0.08em;
-    }
-
-    .badge-red    { background: rgba(230,57,70,0.15);   color: var(--accent);  border: 1px solid rgba(230,57,70,0.3); }
-    .badge-orange { background: rgba(244,162,97,0.15);  color: var(--accent2); border: 1px solid rgba(244,162,97,0.3); }
-    .badge-green  { background: rgba(63,185,80,0.15);   color: var(--green);   border: 1px solid rgba(63,185,80,0.3); }
-
-    /* ── Volume slider ── */
-    .volume-options { display: flex; gap: 0.75rem; margin-top: 0.25rem; }
-
-    .volume-btn {
-      flex: 1;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      color: var(--muted);
-      font-family: var(--mono);
-      font-size: 0.75rem;
-      padding: 0.5rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      letter-spacing: 0.08em;
-    }
-
-    .volume-btn:hover   { border-color: var(--muted); color: var(--text); }
-    .volume-btn.active  { border-color: var(--accent); color: var(--accent); background: rgba(230,57,70,0.08); }
-
-    .volume-hint {
-      font-family: var(--mono);
-      font-size: 0.6rem;
-      color: var(--muted);
-      margin-top: 0.6rem;
-    }
-
-    /* ── Launch button ── */
-    #launch-btn {
-      width: 100%;
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      font-family: var(--sans);
-      font-size: 1.2rem;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      padding: 0.9rem;
-      cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
-      text-transform: uppercase;
-      margin-top: 1.25rem;
-      position: relative;
-      overflow: hidden;
-    }
-
-    #launch-btn:hover   { background: #c1121f; }
-    #launch-btn:active  { transform: scale(0.99); }
-    #launch-btn:disabled {
-      background: var(--muted);
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    #launch-btn .btn-shimmer {
-      position: absolute;
-      top: 0; left: -100%;
-      width: 100%; height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-      animation: shimmer 1.5s infinite;
-    }
-
-    @keyframes shimmer {
-      to { left: 100%; }
-    }
-
-    /* ── Stats bar ── */
-    .stats-bar {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 0.75rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .stat-box {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      padding: 0.75rem 1rem;
-      text-align: center;
-    }
-
-    .stat-value {
-      font-family: var(--mono);
-      font-size: 1.6rem;
-      font-weight: 400;
-      color: #fff;
-      line-height: 1;
-    }
-
-    .stat-value.red    { color: var(--accent); }
-    .stat-value.orange { color: var(--accent2); }
-    .stat-value.green  { color: var(--green); }
-
-    .stat-label {
-      font-family: var(--mono);
-      font-size: 0.55rem;
-      color: var(--muted);
-      letter-spacing: 0.12em;
-      margin-top: 0.3rem;
-    }
-
-    /* ── Log terminal ── */
-    .log-panel {
-      grid-column: 1 / -1;
-    }
-
-    #log-output {
-      background: #060809;
-      border: 1px solid var(--border);
-      height: 340px;
-      overflow-y: auto;
-      padding: 0.75rem;
-      font-family: var(--mono);
-      font-size: 0.72rem;
-      line-height: 1.7;
-    }
-
-    #log-output::-webkit-scrollbar { width: 4px; }
-    #log-output::-webkit-scrollbar-track { background: var(--bg); }
-    #log-output::-webkit-scrollbar-thumb { background: var(--border); }
-
-    .log-line { display: flex; gap: 0.6rem; align-items: flex-start; }
-
-    .log-time  { color: var(--muted); flex-shrink: 0; }
-    .log-type  { flex-shrink: 0; width: 60px; text-align: center; font-size: 0.6rem; padding: 0.05rem 0.2rem; }
-    .log-msg   { color: var(--text); word-break: break-all; }
-
-    .log-type.BLOCKED  { background: rgba(230,57,70,0.2);  color: var(--accent);  }
-    .log-type.PASSED   { background: rgba(63,185,80,0.15); color: var(--green);   }
-    .log-type.PHASE    { background: rgba(244,162,97,0.15); color: var(--accent2); }
-    .log-type.ERROR    { background: rgba(255,255,255,0.05); color: var(--muted);  }
-    .log-type.INFO     { background: rgba(100,160,255,0.1); color: #64a0ff;        }
-
-    .log-empty {
-      color: var(--muted);
-      font-size: 0.7rem;
-      text-align: center;
-      padding-top: 6rem;
-    }
-
-    /* ── Section labels ── */
-    .section-label {
-      font-family: var(--mono);
-      font-size: 0.6rem;
-      letter-spacing: 0.15em;
-      color: var(--muted);
-      text-transform: uppercase;
-      margin-bottom: 0.6rem;
-    }
+    body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;min-height:100vh;line-height:1.5;}
+    header{background:var(--surface);border-bottom:2px solid var(--accent);padding:0 2rem;height:64px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.06);position:sticky;top:0;z-index:100;}
+    .brand{display:flex;align-items:center;gap:.9rem;}
+    .brand-icon{width:36px;height:36px;background:var(--accent);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;}
+    .brand h1{font-size:1.2rem;font-weight:700;color:var(--text);letter-spacing:-.01em;}
+    .brand h1 span{color:var(--accent);}
+    .brand-sub{font-family:var(--mono);font-size:.7rem;color:var(--muted);letter-spacing:.05em;margin-top:1px;}
+    .header-right{display:flex;align-items:center;gap:1.25rem;}
+    .target-pill{font-family:var(--mono);font-size:.8rem;background:#fff8f0;border:1px solid #f5cba7;color:var(--accent2);padding:.3rem .8rem;border-radius:20px;font-weight:500;}
+    .status-dot{display:flex;align-items:center;gap:.4rem;font-size:.8rem;color:var(--muted);font-family:var(--mono);}
+    .dot{width:8px;height:8px;border-radius:50%;background:#ccc;transition:background .3s;}
+    .dot.running{background:var(--accent);animation:blink 1s infinite;}
+    .dot.idle{background:var(--green);}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+    .logout-link{font-size:.85rem;color:var(--muted);text-decoration:none;font-weight:500;transition:color .15s;}
+    .logout-link:hover{color:var(--accent);}
+    .page{max-width:1400px;margin:0 auto;padding:1.75rem 2rem 3rem;}
+    .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.75rem;}
+    .stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;box-shadow:var(--shadow);display:flex;align-items:center;gap:1rem;}
+    .stat-icon{font-size:1.6rem;line-height:1;}
+    .stat-value{font-size:2rem;font-weight:700;line-height:1;font-family:var(--mono);}
+    .stat-value.red{color:var(--accent);}.stat-value.orange{color:var(--accent2);}.stat-value.green{color:var(--green);}.stat-value.blue{color:var(--blue);}
+    .stat-label{font-size:.75rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-top:2px;}
+    .main-cols{display:grid;grid-template-columns:420px 1fr;gap:1.25rem;margin-bottom:1.25rem;align-items:start;}
+    @media(max-width:900px){.main-cols{grid-template-columns:1fr;}}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+    .card-head{padding:.85rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface2);}
+    .card-head-title{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);display:flex;align-items:center;gap:.5rem;}
+    .card-body{padding:1.25rem;}
+    .scenario-list{display:flex;flex-direction:column;gap:.6rem;}
+    .scenario-item{border:2px solid var(--border);border-radius:var(--radius);padding:.85rem 1rem;cursor:pointer;transition:border-color .15s,background .15s;display:flex;align-items:center;gap:.85rem;background:var(--bg);}
+    .scenario-item:hover{border-color:var(--border2);background:#f8f8f5;}
+    .scenario-item.selected{border-color:var(--accent);background:#fdf3f2;}
+    .scenario-item input[type="radio"]{display:none;}
+    .s-icon{font-size:1.5rem;flex-shrink:0;}
+    .s-info{flex:1;min-width:0;}
+    .s-name{font-size:.95rem;font-weight:700;color:var(--text);}
+    .s-desc{font-size:.8rem;color:var(--muted);margin-top:2px;line-height:1.4;}
+    .s-badge{font-family:var(--mono);font-size:.65rem;font-weight:500;padding:.2rem .5rem;border-radius:20px;flex-shrink:0;white-space:nowrap;}
+    .badge-red{background:#fde8e6;color:var(--accent);border:1px solid #f5b7b1;}
+    .badge-orange{background:#fef0e6;color:var(--accent2);border:1px solid #f5cba7;}
+    .badge-green{background:#e8f8f0;color:var(--green);border:1px solid #a9dfbf;}
+    .vol-row{display:flex;gap:.6rem;}
+    .vol-btn{flex:1;border:2px solid var(--border);background:var(--bg);border-radius:var(--radius);padding:.6rem .5rem;cursor:pointer;font-family:var(--sans);font-size:.85rem;font-weight:600;color:var(--muted);text-align:center;transition:all .15s;}
+    .vol-btn:hover{border-color:var(--border2);color:var(--text);}
+    .vol-btn.active{border-color:var(--accent);color:var(--accent);background:#fdf3f2;}
+    .vol-sub{font-size:.7rem;font-weight:400;color:var(--light);display:block;margin-top:1px;}
+    #launch-btn{width:100%;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-family:var(--sans);font-size:1rem;font-weight:700;letter-spacing:.04em;padding:.9rem;cursor:pointer;margin-top:1.1rem;transition:background .15s,transform .1s,box-shadow .15s;box-shadow:0 2px 8px rgba(192,57,43,.25);}
+    #launch-btn:hover{background:var(--accent-h);box-shadow:0 4px 16px rgba(192,57,43,.3);}
+    #launch-btn:active{transform:scale(.99);}
+    #launch-btn:disabled{background:#ccc;box-shadow:none;cursor:not-allowed;}
+    #log-output{background:#1a1a1a;height:480px;overflow-y:auto;padding:1rem;font-family:var(--mono);font-size:.82rem;line-height:1.8;border-radius:0;}
+    #log-output::-webkit-scrollbar{width:5px;}
+    #log-output::-webkit-scrollbar-track{background:#111;}
+    #log-output::-webkit-scrollbar-thumb{background:#333;border-radius:3px;}
+    .log-line{display:flex;gap:.75rem;align-items:baseline;}
+    .log-ts{color:#555;flex-shrink:0;font-size:.75rem;}
+    .log-tag{flex-shrink:0;width:64px;text-align:center;padding:.05rem 0;border-radius:3px;font-size:.68rem;font-weight:500;}
+    .log-msg{color:#ccc;word-break:break-all;}
+    .log-tag.BLOCKED{background:rgba(192,57,43,.25);color:#e74c3c;}
+    .log-tag.PASSED{background:rgba(30,132,73,.2);color:#2ecc71;}
+    .log-tag.PHASE{background:rgba(211,84,0,.2);color:#e67e22;}
+    .log-tag.ERROR{background:rgba(255,255,255,.07);color:#777;}
+    .log-tag.INFO{background:rgba(26,82,118,.2);color:#5dade2;}
+    .log-empty{color:#444;font-size:.82rem;padding-top:8rem;text-align:center;}
+    .log-clear-btn{font-family:var(--mono);font-size:.72rem;color:var(--muted);background:none;border:none;cursor:pointer;padding:0;transition:color .15s;}
+    .log-clear-btn:hover{color:var(--accent);}
+    .story-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;}
+    @media(max-width:900px){.story-grid{grid-template-columns:1fr 1fr;}}
+    .story-step{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;box-shadow:var(--shadow);}
+    .step-num{font-family:var(--mono);font-size:.7rem;font-weight:500;text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem;}
+    .step-1 .step-num{color:var(--accent);}.step-2 .step-num{color:var(--accent2);}.step-3 .step-num{color:var(--green);}.step-4 .step-num{color:var(--blue);}
+    .step-1{border-top:3px solid var(--accent);}.step-2{border-top:3px solid var(--accent2);}.step-3{border-top:3px solid var(--green);}.step-4{border-top:3px solid var(--blue);}
+    .step-icon{font-size:1.6rem;margin-bottom:.5rem;display:block;}
+    .step-title{font-size:1rem;font-weight:700;color:var(--text);margin-bottom:.4rem;}
+    .step-desc{font-size:.85rem;color:var(--muted);line-height:1.55;}
+    .talking-point{background:#fffbf0;border:1px solid #f0e0a0;border-left:4px solid #d4ac0d;border-radius:var(--radius);padding:1rem 1.25rem;margin-top:1rem;font-size:.9rem;color:#5a4a00;line-height:1.6;}
+    .talking-point strong{color:#3d3200;}
+    .section-heading{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem;}
+    .section-heading::after{content:'';flex:1;height:1px;background:var(--border);}
+    .vol-label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.6rem;margin-top:1.1rem;}
   </style>
 </head>
 <body>
-  <div class="app">
+  <header>
+    <div class="brand">
+      <div class="brand-icon">🎯</div>
+      <div>
+        <h1>WAF <span>Simulator</span></h1>
+        <div class="brand-sub">CLOUDFLARE + SENTINELONE DEMO PLATFORM</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="target-pill">▸ {{ target }}</div>
+      <div class="status-dot">
+        <div class="dot idle" id="status-dot"></div>
+        <span id="status-text">Idle</span>
+      </div>
+      <a href="/logout" class="logout-link">Log out</a>
+    </div>
+  </header>
 
-    <!-- Header -->
-    <header>
-      <div class="brand">
-        <div class="brand-dot"></div>
-        <div>
-          <h1>WAF <span>Simulator</span></h1>
-          <p>// CLOUDFLARE + SENTINELONE DEMO PLATFORM</p>
+  <div class="page">
+    <div class="stats-row">
+      <div class="stat"><div class="stat-icon">📡</div><div><div class="stat-value blue" id="stat-total">0</div><div class="stat-label">Requests Sent</div></div></div>
+      <div class="stat"><div class="stat-icon">🛑</div><div><div class="stat-value red" id="stat-blocked">0</div><div class="stat-label">Blocked by WAF</div></div></div>
+      <div class="stat"><div class="stat-icon">⚠️</div><div><div class="stat-value orange" id="stat-passed">0</div><div class="stat-label">Passed Through</div></div></div>
+      <div class="stat"><div class="stat-icon">📊</div><div><div class="stat-value green" id="stat-rate">0%</div><div class="stat-label">Block Rate</div></div></div>
+    </div>
+
+    <div class="section-heading">Attack Controls &amp; Live Log</div>
+
+    <div class="main-cols">
+      <div style="display:flex;flex-direction:column;gap:1.25rem;">
+        <div class="card">
+          <div class="card-head"><div class="card-head-title"><span>⚔️</span> Select Attack Scenario</div></div>
+          <div class="card-body">
+            <div class="scenario-list" id="scenario-grid">
+              <label class="scenario-item selected" onclick="selectScenario(this,'recon')">
+                <input type="radio" name="scenario" value="recon" checked/>
+                <span class="s-icon">🔍</span>
+                <div class="s-info"><div class="s-name">Reconnaissance</div><div class="s-desc">Path traversal, scanner agents, sensitive file probing</div></div>
+                <span class="s-badge badge-orange">Phase 1</span>
+              </label>
+              <label class="scenario-item" onclick="selectScenario(this,'sqli')">
+                <input type="radio" name="scenario" value="sqli"/>
+                <span class="s-icon">💉</span>
+                <div class="s-info"><div class="s-name">SQL Injection</div><div class="s-desc">UNION attacks, blind SQLi, XSS payloads</div></div>
+                <span class="s-badge badge-red">Phase 2</span>
+              </label>
+              <label class="scenario-item" onclick="selectScenario(this,'credential_stuffing')">
+                <input type="radio" name="scenario" value="credential_stuffing"/>
+                <span class="s-icon">🔐</span>
+                <div class="s-info"><div class="s-name">Credential Stuffing</div><div class="s-desc">Rapid POST login attempts with real-world credential lists</div></div>
+                <span class="s-badge badge-red">Phase 3</span>
+              </label>
+              <label class="scenario-item" onclick="selectScenario(this,'zero_day')">
+                <input type="radio" name="scenario" value="zero_day"/>
+                <span class="s-icon">💥</span>
+                <div class="s-info"><div class="s-name">Zero-Day CVEs</div><div class="s-desc">Log4Shell, Spring4Shell, Shellshock exploit payloads</div></div>
+                <span class="s-badge badge-red">Phase 4</span>
+              </label>
+              <label class="scenario-item" onclick="selectScenario(this,'full_campaign')">
+                <input type="radio" name="scenario" value="full_campaign"/>
+                <span class="s-icon">🎯</span>
+                <div class="s-info"><div class="s-name">Full Campaign — All Phases</div><div class="s-desc">All 4 scenarios in sequence. Best for demo prep.</div></div>
+                <span class="s-badge badge-green">Recommended</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><div class="card-head-title"><span>⚡</span> Attack Volume</div></div>
+          <div class="card-body">
+            <div class="vol-row" id="volume-group">
+              <button class="vol-btn active" onclick="setVolume(this,'low')">Low<span class="vol-sub">~40 requests</span></button>
+              <button class="vol-btn" onclick="setVolume(this,'medium')">Medium<span class="vol-sub">~150 requests</span></button>
+              <button class="vol-btn" onclick="setVolume(this,'high')">High<span class="vol-sub">~400 requests</span></button>
+            </div>
+            <div style="font-size:.8rem;color:var(--muted);margin-top:.75rem;">Use <strong>High</strong> the night before your demo to seed 400+ real WAF events.</div>
+            <button id="launch-btn" onclick="launch()">▶ &nbsp; Launch Attack Campaign</button>
+          </div>
         </div>
       </div>
-      <div class="header-right">
-        <div class="target-pill">{{ target }}</div>
-        <a href="/logout" class="logout-btn">[logout]</a>
-      </div>
-    </header>
 
-    <!-- Stats bar -->
-    <div class="stats-bar">
-      <div class="stat-box">
-        <div class="stat-value" id="stat-total">0</div>
-        <div class="stat-label">REQUESTS SENT</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-value red" id="stat-blocked">0</div>
-        <div class="stat-label">BLOCKED BY WAF</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-value orange" id="stat-passed">0</div>
-        <div class="stat-label">PASSED THROUGH</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-value green" id="stat-rate">0%</div>
-        <div class="stat-label">BLOCK RATE</div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-head-title"><span>📋</span> Live Attack Log</div>
+          <button class="log-clear-btn" onclick="clearLog()">Clear</button>
+        </div>
+        <div id="log-output"><div class="log-empty">// Select a scenario above and press Launch to begin</div></div>
       </div>
     </div>
 
-    <!-- Main grid -->
-    <div class="grid">
+    <div class="section-heading">Demo Story Guide</div>
 
-      <!-- Left: Controls -->
-      <div>
-        <!-- Scenario picker -->
-        <div class="card" style="margin-bottom: 1rem;">
-          <div class="card-header">
-            <span class="card-header-accent">▸</span> SELECT ATTACK SCENARIO
-          </div>
-          <div class="card-body">
-            <div class="scenario-grid" id="scenario-grid">
-
-              <label class="scenario-card selected" onclick="selectScenario(this, 'recon')">
-                <input type="radio" name="scenario" value="recon" checked />
-                <span class="scenario-icon">🔍</span>
-                <div class="scenario-name">Reconnaissance</div>
-                <div class="scenario-desc">Path traversal, scanner agents, sensitive file probing</div>
-                <span class="scenario-badge badge-orange">PHASE 1</span>
-              </label>
-
-              <label class="scenario-card" onclick="selectScenario(this, 'sqli')">
-                <input type="radio" name="scenario" value="sqli" />
-                <span class="scenario-icon">💉</span>
-                <div class="scenario-name">SQL Injection</div>
-                <div class="scenario-desc">Database exfiltration, UNION attacks, blind SQLi & XSS</div>
-                <span class="scenario-badge badge-red">PHASE 2</span>
-              </label>
-
-              <label class="scenario-card" onclick="selectScenario(this, 'credential_stuffing')">
-                <input type="radio" name="scenario" value="credential_stuffing" />
-                <span class="scenario-icon">🔐</span>
-                <div class="scenario-name">Credential Stuffing</div>
-                <div class="scenario-desc">Rapid POST login attempts with known username/password lists</div>
-                <span class="scenario-badge badge-red">PHASE 3</span>
-              </label>
-
-              <label class="scenario-card" onclick="selectScenario(this, 'zero_day')">
-                <input type="radio" name="scenario" value="zero_day" />
-                <span class="scenario-icon">💥</span>
-                <div class="scenario-name">Zero-Day CVEs</div>
-                <div class="scenario-desc">Log4Shell, Spring4Shell, Shellshock exploit payloads</div>
-                <span class="scenario-badge badge-red">PHASE 4</span>
-              </label>
-
-              <label class="scenario-card full-width" onclick="selectScenario(this, 'full_campaign')">
-                <input type="radio" name="scenario" value="full_campaign" />
-                <span class="scenario-icon">🎯</span>
-                <div class="scenario-name">Full Campaign — All Phases</div>
-                <div class="scenario-desc">Runs all 4 scenarios in sequence. Best for demos — tells the complete attack story.</div>
-                <span class="scenario-badge badge-green">RECOMMENDED</span>
-              </label>
-
-            </div>
-          </div>
-        </div>
-
-        <!-- Volume control -->
-        <div class="card">
-          <div class="card-header">
-            <span class="card-header-accent">▸</span> ATTACK VOLUME
-          </div>
-          <div class="card-body">
-            <div class="volume-options" id="volume-group">
-              <button class="volume-btn active" onclick="setVolume(this, 'low')">LOW<br><span style="font-size:0.55rem;color:var(--muted)">~40 req</span></button>
-              <button class="volume-btn"        onclick="setVolume(this, 'medium')">MEDIUM<br><span style="font-size:0.55rem;color:var(--muted)">~150 req</span></button>
-              <button class="volume-btn"        onclick="setVolume(this, 'high')">HIGH<br><span style="font-size:0.55rem;color:var(--muted)">~400 req</span></button>
-            </div>
-            <div class="volume-hint">↑ Higher volume = more events in Cloudflare Security Log. Use HIGH for demo prep.</div>
-
-            <button id="launch-btn" onclick="launch()">
-              <span class="btn-shimmer"></span>
-              ▶ &nbsp; LAUNCH ATTACK CAMPAIGN
-            </button>
-          </div>
-        </div>
+    <div class="story-grid">
+      <div class="story-step step-1">
+        <div class="step-num">Step 1 — Generate Data</div>
+        <span class="step-icon">⚙️</span>
+        <div class="step-title">Seed the Logs</div>
+        <div class="step-desc">Run <strong>Full Campaign on High</strong> the night before your demo. This generates 400+ real WAF events across all attack categories in Cloudflare.</div>
       </div>
-
-      <!-- Right: Story guide -->
-      <div class="card">
-        <div class="card-header">
-          <span class="card-header-accent">▸</span> DEMO STORY GUIDE
-        </div>
-        <div class="card-body" style="font-size: 0.85rem; line-height: 1.7;">
-
-          <div style="margin-bottom: 1.25rem;">
-            <div style="font-family: var(--mono); font-size: 0.6rem; color: var(--accent); letter-spacing: 0.1em; margin-bottom: 0.3rem;">STEP 1 — GENERATE DATA (you are here)</div>
-            <div style="color: var(--text);">Run <strong style="color:#fff">Full Campaign on HIGH</strong> the night before your demo. This seeds 400+ real events across all attack types into Cloudflare.</div>
-          </div>
-
-          <div style="margin-bottom: 1.25rem;">
-            <div style="font-family: var(--mono); font-size: 0.6rem; color: var(--accent2); letter-spacing: 0.1em; margin-bottom: 0.3rem;">STEP 2 — SHOW CLOUDFLARE CONSOLE</div>
-            <div style="color: var(--text);">Open <strong style="color:#fff">Security → Events</strong>. Show the spike in WAF alerts. Highlight the SQLi + Log4Shell blocks. Point to Bot Management scores.</div>
-          </div>
-
-          <div style="margin-bottom: 1.25rem;">
-            <div style="font-family: var(--mono); font-size: 0.6rem; color: var(--green); letter-spacing: 0.1em; margin-bottom: 0.3rem;">STEP 3 — PIVOT TO SENTINELONE</div>
-            <div style="color: var(--text);">Show the same events ingested into your <strong style="color:#fff">AI-SIEM</strong>. SentinelOne correlates the 4 phases into <strong style="color:#fff">one incident</strong> — not 400 separate alerts.</div>
-          </div>
-
-          <div style="margin-bottom: 1.25rem;">
-            <div style="font-family: var(--mono); font-size: 0.6rem; color: #64a0ff; letter-spacing: 0.1em; margin-bottom: 0.3rem;">STEP 4 — HYPERAUTOMATION STORY</div>
-            <div style="color: var(--text);">Show the automated workflow: <strong style="color:#fff">detect → enrich → block</strong>. SentinelOne pushes block rule back to Cloudflare in seconds — zero human involvement.</div>
-          </div>
-
-          <div style="background: rgba(230,57,70,0.07); border-left: 2px solid var(--accent); padding: 0.75rem; font-family: var(--mono); font-size: 0.65rem; color: var(--muted); line-height: 1.6;">
-            <strong style="color: var(--accent);">TALKING POINT:</strong><br/>
-            "A human analyst would take 45 minutes to correlate this. SentinelOne's AI did it in 4 seconds and automatically pushed the block to Cloudflare's edge — before the attacker could pivot."
-          </div>
-        </div>
+      <div class="story-step step-2">
+        <div class="step-num">Step 2 — Show Cloudflare</div>
+        <span class="step-icon">☁️</span>
+        <div class="step-title">WAF Catching Threats</div>
+        <div class="step-desc">Open <strong>Security → Events</strong>. Show the spike in alerts. Highlight the Log4Shell blocks and SQLi detections. Point to attacker IPs from Eastern Europe + Asia.</div>
       </div>
-
-      <!-- Log terminal -->
-      <div class="card log-panel">
-        <div class="card-header" style="justify-content: space-between;">
-          <span><span class="card-header-accent">▸</span> LIVE ATTACK LOG</span>
-          <span style="cursor:pointer; color: var(--muted);" onclick="clearLog()">[clear]</span>
-        </div>
-        <div id="log-output">
-          <div class="log-empty">// Waiting for launch — select a scenario above and press Launch</div>
-        </div>
+      <div class="story-step step-3">
+        <div class="step-num">Step 3 — Pivot to SentinelOne</div>
+        <span class="step-icon">🤖</span>
+        <div class="step-title">AI Correlation</div>
+        <div class="step-desc">Show the same events ingested into AI-SIEM. SentinelOne correlates <strong>400 events into 1 incident</strong> — recognising a coordinated campaign, not random noise.</div>
       </div>
+      <div class="story-step step-4">
+        <div class="step-num">Step 4 — Hyperautomation</div>
+        <span class="step-icon">⚡</span>
+        <div class="step-title">Auto-Block in Seconds</div>
+        <div class="step-desc">Show <strong>Detect → Enrich → Block</strong>. SentinelOne pushes the block rule back to Cloudflare's edge automatically — zero human involvement.</div>
+      </div>
+    </div>
 
-    </div><!-- /grid -->
-  </div><!-- /app -->
+    <div class="talking-point">
+      <strong>💬 Key Talking Point:</strong> "A human analyst would take 45 minutes to correlate this attack campaign across 400 events. SentinelOne's AI did it in 4 seconds and automatically pushed the block rule to Cloudflare's edge — before the attacker could pivot to the next phase."
+    </div>
+  </div>
 
   <script>
-    let selectedScenario = 'recon';
-    let selectedVolume   = 'low';
-    let eventSource      = null;
+    let selectedScenario='recon',selectedVolume='low',eventSource=null;
+    let stats={total:0,blocked:0,passed:0};
 
-    // Stats counters
-    let stats = { total: 0, blocked: 0, passed: 0 };
+    function selectScenario(el,v){document.querySelectorAll('.scenario-item').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');selectedScenario=v;}
+    function setVolume(el,v){document.querySelectorAll('.vol-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');selectedVolume=v;}
 
-    function selectScenario(el, value) {
-      document.querySelectorAll('.scenario-card').forEach(c => c.classList.remove('selected'));
-      el.classList.add('selected');
-      selectedScenario = value;
+    function clearLog(){
+      document.getElementById('log-output').innerHTML='<div class="log-empty">// Log cleared</div>';
+      stats={total:0,blocked:0,passed:0};updateStats();
     }
 
-    function setVolume(el, value) {
-      document.querySelectorAll('.volume-btn').forEach(b => b.classList.remove('active'));
-      el.classList.add('active');
-      selectedVolume = value;
+    function updateStats(){
+      document.getElementById('stat-total').textContent=stats.total;
+      document.getElementById('stat-blocked').textContent=stats.blocked;
+      document.getElementById('stat-passed').textContent=stats.passed;
+      const r=stats.total>0?Math.round((stats.blocked/stats.total)*100):0;
+      document.getElementById('stat-rate').textContent=r+'%';
     }
 
-    function clearLog() {
-      document.getElementById('log-output').innerHTML =
-        '<div class="log-empty">// Log cleared</div>';
-      stats = { total: 0, blocked: 0, passed: 0 };
+    function setStatus(running){
+      document.getElementById('status-dot').className='dot '+(running?'running':'idle');
+      document.getElementById('status-text').textContent=running?'Running...':'Idle';
+    }
+
+    function addLog(entry){
+      const out=document.getElementById('log-output');
+      const empty=out.querySelector('.log-empty');if(empty)empty.remove();
+      const time=new Date().toLocaleTimeString('en-US',{hour12:false});
+      let tag='INFO';
+      if(entry.type==='blocked'){tag='BLOCKED';stats.total++;stats.blocked++;}
+      else if(entry.type==='passed'){tag='PASSED';stats.total++;stats.passed++;}
+      else if(entry.type==='phase'||entry.type==='phase_end'){tag='PHASE';}
+      else if(entry.type==='error'){tag='ERROR';}
+      else if(entry.type==='ping'){return;}
       updateStats();
+      let msg=entry.type==='blocked'||entry.type==='passed'
+        ?`[${entry.method||'GET'}] ${entry.url} — ${entry.label||''} — HTTP ${entry.status} — src: ${entry.ip||''}`
+        :entry.message||entry.label||'';
+      const line=document.createElement('div');line.className='log-line';
+      line.innerHTML=`<span class="log-ts">${time}</span><span class="log-tag ${tag}">${tag}</span><span class="log-msg">${esc(msg)}</span>`;
+      out.appendChild(line);out.scrollTop=out.scrollHeight;
     }
 
-    function updateStats() {
-      document.getElementById('stat-total').textContent   = stats.total;
-      document.getElementById('stat-blocked').textContent = stats.blocked;
-      document.getElementById('stat-passed').textContent  = stats.passed;
-      const rate = stats.total > 0 ? Math.round((stats.blocked / stats.total) * 100) : 0;
-      document.getElementById('stat-rate').textContent    = rate + '%';
-    }
+    function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-    function addLog(entry) {
-      const out = document.getElementById('log-output');
-
-      // Remove placeholder
-      const empty = out.querySelector('.log-empty');
-      if (empty) empty.remove();
-
-      const time = new Date().toLocaleTimeString('en-US', { hour12: false });
-
-      let typeLabel = '';
-      let msgColor  = '';
-
-      switch (entry.type) {
-        case 'blocked':
-          typeLabel = 'BLOCKED';
-          stats.total++; stats.blocked++;
-          break;
-        case 'passed':
-          typeLabel = 'PASSED';
-          stats.total++; stats.passed++;
-          break;
-        case 'phase':
-        case 'phase_end':
-          typeLabel = 'PHASE';
-          break;
-        case 'error':
-          typeLabel = 'ERROR';
-          break;
-        case 'done':
-          typeLabel = 'INFO';
-          break;
-        case 'ping':
-          return; // skip heartbeats
-        default:
-          typeLabel = 'INFO';
-      }
-
-      updateStats();
-
-      let msg = '';
-      if (entry.type === 'blocked' || entry.type === 'passed') {
-        msg = `[${entry.method || 'GET'}] ${entry.url} — ${entry.label || ''} — HTTP ${entry.status} — src: ${entry.ip || ''}`;
-      } else {
-        msg = entry.message || entry.label || JSON.stringify(entry);
-      }
-
-      const line = document.createElement('div');
-      line.className = 'log-line';
-      line.innerHTML = `
-        <span class="log-time">${time}</span>
-        <span class="log-type ${typeLabel}">${typeLabel}</span>
-        <span class="log-msg">${escHtml(msg)}</span>
-      `;
-      out.appendChild(line);
-      out.scrollTop = out.scrollHeight;
-    }
-
-    function escHtml(str) {
-      return String(str)
-        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    }
-
-    async function launch() {
-      const btn = document.getElementById('launch-btn');
-
-      // Check if already running
-      const statusRes = await fetch('/status');
-      const statusData = await statusRes.json();
-      if (statusData.running) {
-        addLog({ type: 'error', message: 'An attack is already running. Please wait.' });
-        return;
-      }
-
-      btn.disabled = true;
-      btn.textContent = '⏳  CAMPAIGN RUNNING...';
-
-      // Clear old log
-      document.getElementById('log-output').innerHTML = '';
-      stats = { total: 0, blocked: 0, passed: 0 };
-      updateStats();
-
-      // Close any existing stream
-      if (eventSource) { eventSource.close(); eventSource = null; }
-
-      // Launch
-      const res = await fetch('/launch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scenario: selectedScenario, volume: selectedVolume })
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        addLog({ type: 'error', message: err.error || 'Launch failed' });
-        btn.disabled = false;
-        btn.innerHTML = '<span class="btn-shimmer"></span>▶ &nbsp; LAUNCH ATTACK CAMPAIGN';
-        return;
-      }
-
-      // Start SSE stream
-      eventSource = new EventSource('/stream');
-
-      eventSource.onmessage = function(e) {
-        const entry = JSON.parse(e.data);
-        addLog(entry);
-
-        if (entry.type === 'done') {
-          eventSource.close();
-          btn.disabled = false;
-          btn.innerHTML = '<span class="btn-shimmer"></span>▶ &nbsp; LAUNCH ATTACK CAMPAIGN';
-        }
+    async function launch(){
+      const btn=document.getElementById('launch-btn');
+      const sr=await fetch('/status');const sd=await sr.json();
+      if(sd.running){addLog({type:'error',message:'A campaign is already running — please wait.'});return;}
+      btn.disabled=true;btn.textContent='⏳  Campaign running...';setStatus(true);
+      document.getElementById('log-output').innerHTML='';stats={total:0,blocked:0,passed:0};updateStats();
+      if(eventSource){eventSource.close();eventSource=null;}
+      const res=await fetch('/launch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scenario:selectedScenario,volume:selectedVolume})});
+      if(!res.ok){const err=await res.json();addLog({type:'error',message:err.error||'Launch failed'});btn.disabled=false;btn.textContent='▶  Launch Attack Campaign';setStatus(false);return;}
+      eventSource=new EventSource('/stream');
+      eventSource.onmessage=function(e){
+        const entry=JSON.parse(e.data);addLog(entry);
+        if(entry.type==='done'){eventSource.close();btn.disabled=false;btn.textContent='▶  Launch Attack Campaign';setStatus(false);}
       };
-
-      eventSource.onerror = function() {
-        eventSource.close();
-        btn.disabled = false;
-        btn.innerHTML = '<span class="btn-shimmer"></span>▶ &nbsp; LAUNCH ATTACK CAMPAIGN';
-        addLog({ type: 'error', message: 'Stream disconnected. Check server.' });
-      };
+      eventSource.onerror=function(){eventSource.close();btn.disabled=false;btn.textContent='▶  Launch Attack Campaign';setStatus(false);addLog({type:'error',message:'Stream disconnected. Check server.'});};
     }
   </script>
 </body>
