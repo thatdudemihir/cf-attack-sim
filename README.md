@@ -85,6 +85,8 @@ systemctl restart waf-simulator
 # 6. Open http://YOUR_SERVER_IP
 ```
 
+Note: If hosting multiple sites on the same droplet, the setup script 
+automatically sets the simulator as the default site for direct IP access.
 ---
 
 ## Pushing Updates to GitHub
