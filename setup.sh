@@ -77,7 +77,7 @@ systemctl start waf-simulator
 echo "[6/6] Configuring Nginx..."
 cat > /etc/nginx/sites-available/waf-simulator << 'EOF'
 server {
-    listen 80;
+    listen 80 default_server;
     server_name _;   # Replace _ with your domain if you have one
 
     # Important for SSE streaming — disable buffering
