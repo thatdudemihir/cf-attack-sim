@@ -44,7 +44,7 @@ Show the automated workflow: detect → enrich → block. SentinelOne pushes a b
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/YOUR_USERNAME/cf-attack-sim.git
+git clone https://github.com/thatdudemihir/cf-attack-sim.git
 cd cf-attack-sim
 
 # 2. Create virtual environment
@@ -70,7 +70,7 @@ python app.py
 ssh root@YOUR_SERVER_IP
 
 # 2. Clone the repo
-git clone https://github.com/YOUR_USERNAME/cf-attack-sim.git
+git clone https://github.com/thatdudemihir/cf-attack-sim.git
 cd cf-attack-sim
 
 # 3. Run the setup script (installs everything + configures Nginx)
@@ -87,15 +87,22 @@ systemctl restart waf-simulator
 
 ---
 
-## Pushing to GitHub (First Time)
+## Pushing Updates to GitHub
 
 ```bash
-# On your local machine
+git add .
+git commit -m "Your message here"
+git push
+```
+
+## First Time Setup (already done)
+
+```bash
 git init
 git add .
 git commit -m "Initial commit"
 git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/cf-attack-sim.git
+git remote add origin https://github.com/thatdudemihir/cf-attack-sim.git
 git push -u origin main
 ```
 
